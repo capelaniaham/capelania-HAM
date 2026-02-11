@@ -21,12 +21,17 @@ export const useDocumentGenerator = () => {
     }
   };
 
-  // Função auxiliar interna para converter HTML em Imagem
+  // Função auxiliar interna para converter HTML em Imagem garantindo carregamento de assets
   const htmlToImage = async (element: HTMLElement) => {
     const html2canvas = (await import('html2canvas')).default;
+    
+    // Aguarda um ciclo para garantir que o navegador processou as tags de imagem
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const canvas = await html2canvas(element, {
       scale: 2,
-      useCORS: true,
+      useCORS: true, // Crucial para o Supabase
+      allowTaint: false,
       logging: false,
       backgroundColor: '#ffffff'
     });
@@ -92,8 +97,15 @@ export const useDocumentGenerator = () => {
         tempDiv.innerHTML = item.html;
         const element = tempDiv.firstElementChild as HTMLElement;
 
+        // Aguarda carregamento de assets
+        await new Promise(resolve => setTimeout(resolve, 300));
+
         // Converte
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const canvas = await html2canvas(element, { 
+          scale: 2, 
+          useCORS: true, 
+          backgroundColor: '#ffffff' 
+        });
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
         
         // Cria PDF individual

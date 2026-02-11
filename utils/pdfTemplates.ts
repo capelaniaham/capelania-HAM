@@ -18,7 +18,7 @@ export const generateExecutiveHTML = (data: PDFTemplateData) => {
 
   const renderHeader = () => `
     <header style="border-bottom: 4px solid ${pColor}; padding-bottom: 20px; margin-bottom: 30px; position: relative; height: 120px; display: flex; align-items: center;">
-      <img src="${reportLogoSrc}" style="width: ${config.reportLogoWidth}px; position: absolute; left: ${config.reportLogoX}px; top: ${config.reportLogoY}px;" />
+      <img src="${reportLogoSrc}" crossOrigin="anonymous" style="width: ${config.reportLogoWidth}px; position: absolute; left: ${config.reportLogoX}px; top: ${config.reportLogoY}px;" />
       <div style="flex: 1; text-align: ${config.headerTextAlign}; padding-top: ${config.headerPaddingTop}px; margin-left: ${config.reportLogoWidth + 20}px;">
         <h1 style="font-size: ${config.fontSize1}px; color: ${pColor}; margin: 0; text-transform: uppercase; font-weight: 900;">${config.headerLine1}</h1>
         <h2 style="font-size: ${config.fontSize2}px; color: #475569; margin: 0; text-transform: uppercase; font-weight: 700;">${config.headerLine2}</h2>

@@ -40,11 +40,18 @@ const AdminConfig: React.FC<AdminConfigProps> = ({ config, setConfig }) => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${type}-logo-${Date.now()}.${fileExt}`;
+      
+      // Tenta o upload
       const { data, error } = await supabase.storage
         .from('app-assets')
         .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('policy')) {
+          throw new Error("Permissão Negada: Configure a Policy no Supabase para 'app-assets'.");
+        }
+        throw error;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('app-assets')
@@ -55,14 +62,13 @@ const AdminConfig: React.FC<AdminConfigProps> = ({ config, setConfig }) => {
       } else {
         setConfig({ ...config, reportLogoUrl: publicUrl });
       }
-      showToast("Upload realizado com sucesso!", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Falha no upload. Verifique bucket 'app-assets'.", "warning");
+      showToast("Logo atualizada com sucesso!", "success");
+    } catch (err: any) {
+      console.error("Erro no upload:", err);
+      showToast(err.message || "Falha no upload. Verifique as políticas do bucket.", "warning");
     } finally {
       setIsUploading(null);
-      // Limpa o input
-      e.target.value = '';
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -91,7 +97,7 @@ const AdminConfig: React.FC<AdminConfigProps> = ({ config, setConfig }) => {
               <input ref={appLogoInputRef} type="file" accept="image/*" onChange={(e) => handleUpload(e, 'app')} className="hidden" />
             </div>
             <div className="h-24 bg-white rounded-xl flex items-center justify-center border border-slate-200 overflow-hidden relative">
-              <img src={config.appLogoUrl || DEFAULT_APP_LOGO} className="h-16 object-contain" alt="App Logo" />
+              <img src={config.appLogoUrl || DEFAULT_APP_LOGO} className="h-16 object-contain" alt="App Logo" crossOrigin="anonymous" />
               {!config.appLogoUrl && <span className="absolute bottom-1 right-2 text-[8px] font-bold text-amber-500 uppercase">Padrão</span>}
             </div>
             <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
@@ -114,7 +120,7 @@ const AdminConfig: React.FC<AdminConfigProps> = ({ config, setConfig }) => {
               <input ref={reportLogoInputRef} type="file" accept="image/*" onChange={(e) => handleUpload(e, 'report')} className="hidden" />
             </div>
             <div className="h-24 bg-white rounded-xl flex items-center justify-center border border-slate-200 overflow-hidden relative">
-              <img src={config.reportLogoUrl || DEFAULT_APP_LOGO} className="h-16 object-contain" alt="Report Logo" />
+              <img src={config.reportLogoUrl || DEFAULT_APP_LOGO} className="h-16 object-contain" alt="Report Logo" crossOrigin="anonymous" />
               {!config.reportLogoUrl && <span className="absolute bottom-1 right-2 text-[8px] font-bold text-amber-500 uppercase">Padrão</span>}
             </div>
              <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
