@@ -23,7 +23,6 @@ interface ReportsProps {
 
 const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, users, currentUser, config }) => {
   const { generatePdf, generateExcel, isGenerating } = useDocumentGenerator();
-  // Estado local para controle visual de qual botão está carregando
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const getStartOfMonth = () => {
@@ -34,7 +33,7 @@ const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, use
   const [filters, setFilters] = useState({
     startDate: getStartOfMonth(),
     endDate: new Date().toISOString().split('T')[0],
-    selectedChaplain: 'all', selectedUnit: 'all', selectedActivity: ActivityFilter.TODAS, selectedStatus: 'all'
+    selectedChaplain: 'all', selectedUnit: Unit.HAM, selectedActivity: ActivityFilter.TODAS, selectedStatus: 'all'
   });
 
   const { filteredData, auditList, totalStats } = useReportLogic(studies, classes, groups, visits, users, filters as any);
@@ -45,18 +44,17 @@ const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, use
       const uid = userObj.id;
       const filterByUid = (list: any[]) => list.filter(i => i.userId === uid);
       const getUnitStats = (unit: Unit) => {
-        const uS = filterByUid(filteredData.studies).filter(i => (i.unit || Unit.HAB) === unit);
-        const uC = filterByUid(filteredData.classes).filter(i => (i.unit || Unit.HAB) === unit);
-        const uG = filterByUid(filteredData.groups).filter(i => (i.unit || Unit.HAB) === unit);
-        const uV = filterByUid(filteredData.visits).filter(i => (i.unit || Unit.HAB) === unit);
+        const uS = filterByUid(filteredData.studies);
+        const uC = filterByUid(filteredData.classes);
+        const uG = filterByUid(filteredData.groups);
+        const uV = filterByUid(filteredData.visits);
         const names = new Set<string>();
         uS.forEach(s => s.name && names.add(normalizeString(s.name)));
         uC.forEach(c => c.students?.forEach((n: any) => n && names.add(normalizeString(n))));
         return { students: names.size, studies: uS.length, classes: uC.length, groups: uG.length, visits: uV.length, total: uS.length + uC.length + uG.length + uV.length };
       };
-      const hab = getUnitStats(Unit.HAB);
-      const haba = getUnitStats(Unit.HABA);
-      return { user: userObj, name: userObj.name, totalActions: hab.total + haba.total, hab, haba, students: hab.students + haba.students, maxVal: Math.max(hab.total + haba.total, 1) };
+      const stats = getUnitStats(Unit.HAM);
+      return { user: userObj, name: userObj.name, totalActions: stats.total, stats, students: stats.students, maxVal: Math.max(stats.total, 1) };
     }).filter(s => filters.selectedChaplain === 'all' || s.user.id === filters.selectedChaplain)
       .filter(s => filters.selectedChaplain !== 'all' || s.totalActions > 0 || s.students > 0).sort((a, b) => b.totalActions - a.totalActions);
   }, [users, filteredData, filters.selectedChaplain]);
@@ -65,20 +63,17 @@ const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, use
 
   const handleExportExcel = () => {
     const studiesData = filteredData.studies.map(s => ({ Data: formatDate(s.date), Aluno: s.name, WhatsApp: s.whatsapp, Unidade: s.unit, Setor: s.sector, Guia: s.guide, Licao: s.lesson, Status: s.status, Capelao: users.find(u => u.id === s.userId)?.name }));
-    // Nota: Em uma implementação ideal, o hook suportaria multiplas abas. 
-    // Aqui faremos simples para o exemplo ou expandiriamos o hook.
-    // Usando apenas estudos como exemplo ou combinando.
     generateExcel(studiesData, "Estudos", `Relatorio_Estudos_${filters.startDate}`);
   };
 
   const handleGenerateOfficialReport = async () => {
     setLoadingAction('official');
-    let habTotal = 0, habaTotal = 0;
-    chaplainStats.forEach(s => { habTotal += s.hab.total; habaTotal += s.haba.total; });
+    let total = 0;
+    chaplainStats.forEach(s => { total += s.stats.total; });
     
     const html = generateExecutiveHTML({
       config, filters, totalStats, chaplainStats, 
-      unitTotals: { hab: habTotal, haba: habaTotal }, 
+      unitTotals: { hab: total, haba: 0 }, 
       pColor
     });
     
@@ -107,13 +102,13 @@ const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, use
       html += `<div class="pdf-page" style="width: 210mm; height: 297mm; padding: 15mm; background: white; box-sizing: border-box; font-family: sans-serif; position: relative;">
           ${renderAuditHeader()}
           <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
-            <thead><tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #64748b; text-transform: uppercase;"><th style="padding: 10px; text-align: left;">Data</th><th style="padding: 10px; text-align: left;">Setor / Unid</th><th style="padding: 10px; text-align: left;">Nome / Motivo</th><th style="padding: 10px; text-align: left;">Capelão</th><th style="padding: 10px; text-align: right;">Status</th></tr></thead>
+            <thead><tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #64748b; text-transform: uppercase;"><th style="padding: 10px; text-align: left;">Data</th><th style="padding: 10px; text-align: left;">Setor</th><th style="padding: 10px; text-align: left;">Nome / Motivo</th><th style="padding: 10px; text-align: left;">Capelão</th><th style="padding: 10px; text-align: right;">Status</th></tr></thead>
             <tbody>
               ${data.slice(p * ROWS_PER_PAGE, (p + 1) * ROWS_PER_PAGE).map((item: any) => {
                 const dateFmt = new Date(item.date).toLocaleDateString();
                 const nameStr = type === 'students' ? (item.isClass ? item.studentsList.join(', ') : item.name) : item.staffName;
                 const chaplainStr = type === 'students' ? item.chaplain : (users.find(u => u.id === item.userId)?.name || 'N/I');
-                return `<tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px;">${dateFmt}</td><td style="padding: 8px; font-weight: 700;">${resolveDynamicName(item.sector)}<br/><span style="font-size: 7px; color: #94a3b8;">${item.unit}</span></td><td style="padding: 8px; font-weight: 900; text-transform: uppercase;">${nameStr}</td><td style="padding: 8px;">${chaplainStr.split(' ')[0]}</td><td style="padding: 8px; text-align: right; font-weight: 900; color: ${item.status === RecordStatus.TERMINO ? '#f43f5e' : '#10b981'};">${item.status || 'OK'}</td></tr>`;
+                return `<tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px;">${dateFmt}</td><td style="padding: 8px; font-weight: 700;">${resolveDynamicName(item.sector)}</td><td style="padding: 8px; font-weight: 900; text-transform: uppercase;">${nameStr}</td><td style="padding: 8px;">${chaplainStr.split(' ')[0]}</td><td style="padding: 8px; text-align: right; font-weight: 900; color: ${item.status === RecordStatus.TERMINO ? '#f43f5e' : '#10b981'};">${item.status || 'OK'}</td></tr>`;
               }).join('')}
             </tbody>
           </table>
@@ -129,7 +124,7 @@ const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, use
     <div className="space-y-10 pb-32 animate-in fade-in duration-500">
       <section className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">Relatórios Digitais</h1>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">Relatórios HAM</h1>
           <ReportActions 
             pColor={pColor} 
             generating={isGenerating ? loadingAction : null} 
@@ -140,11 +135,10 @@ const Reports: React.FC<ReportsProps> = ({ studies, classes, groups, visits, use
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 p-6 bg-slate-50 rounded-[2.5rem]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-6 bg-slate-50 rounded-[2.5rem]">
           <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 ml-2 uppercase">Início</label><input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} className="w-full p-4 rounded-2xl bg-white border-none font-bold text-xs shadow-sm" /></div>
           <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 ml-2 uppercase">Fim</label><input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} className="w-full p-4 rounded-2xl bg-white border-none font-bold text-xs shadow-sm" /></div>
           <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 ml-2 uppercase">Capelão</label><select value={filters.selectedChaplain} onChange={e => setFilters({...filters, selectedChaplain: e.target.value})} className="w-full p-4 rounded-2xl bg-white border-none font-bold text-xs shadow-sm"><option value="all">Todos</option>{users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
-          <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 ml-2 uppercase">Unidade</label><select value={filters.selectedUnit} onChange={e => setFilters({...filters, selectedUnit: e.target.value as any})} className="w-full p-4 rounded-2xl bg-white border-none font-bold text-xs shadow-sm"><option value="all">Todas</option><option value={Unit.HAB}>HAB</option><option value={Unit.HABA}>HABA</option></select></div>
           <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 ml-2 uppercase">Atividade</label><select value={filters.selectedActivity} onChange={e => setFilters({...filters, selectedActivity: e.target.value as any})} className="w-full p-4 rounded-2xl bg-white border-none font-bold text-xs shadow-sm">{Object.values(ActivityFilter).map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
           <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 ml-2 uppercase">Status</label><select value={filters.selectedStatus} onChange={e => setFilters({...filters, selectedStatus: e.target.value as any})} className="w-full p-4 rounded-2xl bg-white border-none font-bold text-xs shadow-sm"><option value="all">Todos</option>{Object.values(RecordStatus).map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
         </div>

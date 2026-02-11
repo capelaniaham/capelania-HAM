@@ -5,6 +5,7 @@ export enum UserRole {
 }
 
 export enum Unit {
+  HAM = 'HAM',
   HAB = 'HAB',
   HABA = 'HABA'
 }

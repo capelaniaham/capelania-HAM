@@ -182,7 +182,7 @@ export interface VisitRequest {
   pgName: string;
   leaderName: string;
   leaderPhone?: string;
-  unit: 'HAB' | 'HABA';
+  unit: Unit;
   date: string;
   status: 'pending' | 'confirmed' | 'declined' | 'assigned';
   requestNotes?: string;

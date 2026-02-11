@@ -1,7 +1,8 @@
+
 {
-  "name": "Capelania Hospitalar Pro",
+  "name": "Capelania Hospitalar HAM",
   "short_name": "Capelania",
-  "description": "Sistema Profissional de Capelania Hospitalar - HAB/HABA",
+  "description": "Sistema Profissional de Capelania Hospitalar - Hospital Adventista de Manaus",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

@@ -9,14 +9,14 @@ import PGOps from './PGOps';
 
 const PGManagerLayout: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'membership' | 'structure' | 'ops' | 'reports'>('dashboard');
-  const [currentUnit, setCurrentUnit] = useState<Unit>(Unit.HAB);
+  const [currentUnit] = useState<Unit>(Unit.HAM); // Fixado em HAM
 
   useEffect(() => {
     const container = document.getElementById('main-scroll-container');
     if (container) {
       container.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [activeSubTab, currentUnit]);
+  }, [activeSubTab]);
 
   const tabs = [
     { id: 'dashboard', label: 'Visão Geral', icon: 'fas fa-chart-pie' },
@@ -47,20 +47,9 @@ const PGManagerLayout: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex bg-slate-100 p-1 rounded-xl md:rounded-2xl border border-slate-200 self-end md:self-auto">
-              {[Unit.HAB, Unit.HABA].map(u => (
-                <button 
-                  key={u} 
-                  onClick={() => setCurrentUnit(u)} 
-                  className={`px-6 md:px-8 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase transition-all ${
-                    currentUnit === u 
-                      ? 'bg-[#005a9c] text-white shadow-lg scale-105' 
-                      : 'text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Unidade {u}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 px-6 py-3 bg-blue-50 border border-blue-100 rounded-2xl">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              <span className="font-black text-[10px] uppercase text-blue-700 tracking-widest">Unidade Manaus - HAM</span>
             </div>
           </header>
 

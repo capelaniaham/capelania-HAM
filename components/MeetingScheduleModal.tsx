@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, X, User, AlertTriangle, Check } from 'lucide-react';
-import { MeetingSchedule, Chaplain, Leader, VisitRequest } from '../types';
+// Import Unit enum to resolve type mismatch on line 72/76
+import { MeetingSchedule, Chaplain, Leader, VisitRequest, Unit } from '../types';
 import { useApp } from '../contexts/AppContext';
 
 interface MeetingScheduleModalProps {
@@ -69,7 +70,8 @@ const MeetingScheduleModal: React.FC<MeetingScheduleModalProps> = ({
             pgName: user.pg_name || `PG ${user.sector_name || 'Sem Setor'}`,
             leaderName: user.full_name,
             leaderPhone: user.whatsapp || '',
-            unit: 'HAB',
+            // Correctly use Unit.HAB instead of 'HAB' to match VisitRequest interface
+            unit: Unit.HAB,
             date: new Date(date).toISOString(),
             requestNotes: requestNotes,
             preferredChaplainId: preferredId || undefined,

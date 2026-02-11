@@ -16,7 +16,7 @@ export const useAppFlow = ({ currentUser, saveRecord, deleteRecord }: UseAppFlow
 
   const [activeTab, setActiveTabState] = useState('dashboard');
   const [isPending, startTransition] = useTransition();
-  const [currentUnit, setCurrentUnit] = useState<Unit>(Unit.HAB);
+  const currentUnit = Unit.HAM; // Unidade Fixa
   const [editingItem, setEditingItem] = useState<any>(null);
   const [itemToDelete, setItemToDelete] = useState<{type: string, id: string} | null>(null);
 
@@ -53,6 +53,7 @@ export const useAppFlow = ({ currentUser, saveRecord, deleteRecord }: UseAppFlow
       ...data,
       id: targetId,
       date: safeDate,
+      unit: Unit.HAM, // Garante gravação como HAM
       userId: data.userId || currentUser.id,
       createdAt: data.createdAt || now,
       updatedAt: now
@@ -89,19 +90,20 @@ export const useAppFlow = ({ currentUser, saveRecord, deleteRecord }: UseAppFlow
 
   const getVisibleHistory = useCallback((list: any[]) => {
     if (!currentUser) return [];
-    const matchUnit = (item: any) => (item.unit || Unit.HAB) === currentUnit;
+    // Filtra histórico apenas para unidade HAM
+    const matchUnit = (item: any) => (item.unit || Unit.HAM) === Unit.HAM;
     
     return currentUser.role === UserRole.ADMIN 
       ? list.filter(matchUnit) 
       : list.filter(item => item && matchUnit(item) && item.userId === currentUser.id);
-  }, [currentUser, currentUnit]);
+  }, [currentUser]);
 
   return {
     activeTab, 
     isPending,
     setActiveTab, 
     currentUnit, 
-    setCurrentUnit, 
+    setCurrentUnit: () => {}, // Mock para evitar erros de tipagem
     editingItem, 
     setEditingItem, 
     itemToDelete, 

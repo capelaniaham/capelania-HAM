@@ -20,8 +20,8 @@ export const NAV_ITEMS = [
 ];
 
 export const INITIAL_CONFIG: Config = {
-  muralText: "Bem-vindo ao sistema de capelania!",
-  headerLine1: "Hospital Adventista de Belém",
+  muralText: "Bem-vindo ao sistema de capelania HAM!",
+  headerLine1: "Hospital Adventista de Manaus",
   headerLine2: "Departamento de Capelania",
   headerLine3: "Setor de Assistência Espiritual",
   fontSize1: 24,

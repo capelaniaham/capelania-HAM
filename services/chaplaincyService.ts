@@ -1,20 +1,17 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_KEY } from '../constants';
+import { Unit } from '../types';
 
-// --- CONFIGURAÇÃO DA PONTE COM CAPELANIA PRO ---
-// Usamos as credenciais públicas do App de Capelania para permitir
-// que o App de PGs "deposite" pedidos de visita na tabela 'visit_requests'.
-
-const CHAPLAINCY_URL = "https://qksbywkshuznbuyzwljx.supabase.co";
-const CHAPLAINCY_KEY = "sb_publishable_44GfukXRPHT92-DXRpEmSg_0CTgXA09";
-
-export const chaplaincyClient = createClient(CHAPLAINCY_URL, CHAPLAINCY_KEY);
+// --- CONFIGURAÇÃO UNIFICADA HAM ---
+// Agora utiliza a mesma conexão do banco principal para evitar silos de dados externos.
+export const chaplaincyClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export interface InvitePayload {
   pg_name: string;
   leader_name: string;
   leader_phone?: string;
-  unit: 'HAB' | 'HABA';
+  unit: Unit.HAM; // Restrito exclusivamente para Manaus
   date: string; // ISO String com fuso horário
   request_notes?: string;
   preferred_chaplain_id?: string;
@@ -22,7 +19,7 @@ export interface InvitePayload {
 
 export const sendChaplainInvite = async (data: InvitePayload) => {
   try {
-    console.log("Enviando solicitação para Capelania:", data);
+    console.log("[Bridge] Enviando solicitação para Capelania HAM:", data);
     
     const { error } = await chaplaincyClient
       .from('visit_requests')
@@ -30,20 +27,20 @@ export const sendChaplainInvite = async (data: InvitePayload) => {
         pg_name: data.pg_name,
         leader_name: data.leader_name,
         leader_phone: data.leader_phone,
-        unit: data.unit,
+        unit: Unit.HAM,
         date: data.date,
         request_notes: data.request_notes,
         preferred_chaplain_id: data.preferred_chaplain_id || null,
-        status: 'pending' // Status inicial padrão
+        status: 'pending'
       });
 
     if (error) {
-      console.error("Erro Supabase:", error);
+      console.error("[Bridge] Erro Supabase:", error);
       return false;
     }
     return true;
   } catch (e) {
-    console.error("Erro de conexão com serviço de capelania:", e);
+    console.error("[Bridge] Erro de conexão interna:", e);
     return false;
   }
 };

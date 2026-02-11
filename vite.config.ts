@@ -1,3 +1,4 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -7,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: [], // Removido para evitar 404 em arquivos que são Data URI no HTML
+      includeAssets: [], 
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg}'],
         runtimeCaching: [
@@ -42,9 +43,9 @@ export default defineConfig({
         ]
       },
       manifest: {
-        name: "Capelania Hospitalar Pro",
+        name: "Capelania Hospitalar HAM",
         short_name: "Capelania",
-        description: "Sistema Profissional de Capelania Hospitalar - HAB/HABA",
+        description: "Sistema Profissional de Capelania Hospitalar - Manaus",
         theme_color: "#005a9c",
         background_color: "#f1f5f9",
         display: "standalone",

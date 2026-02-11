@@ -13,7 +13,7 @@ interface PDFTemplateData {
 const formatDate = (d: string) => d.split('T')[0].split('-').reverse().join('/');
 
 export const generateExecutiveHTML = (data: PDFTemplateData) => {
-  const { config, filters, totalStats, chaplainStats, unitTotals, pColor } = data;
+  const { config, filters, totalStats, chaplainStats, pColor } = data;
   const reportLogoSrc = config.reportLogoUrl || '';
 
   const renderHeader = () => `
@@ -29,11 +29,12 @@ export const generateExecutiveHTML = (data: PDFTemplateData) => {
   `;
 
   const renderTable = (unit: Unit) => {
-    const tableData = chaplainStats.filter(s => (unit === Unit.HAB ? s.hab.total > 0 || s.hab.students > 0 : s.haba.total > 0 || s.haba.students > 0));
+    // Filtra estatísticas para a unidade HAM (Manaus)
+    const tableData = chaplainStats.filter(s => s.totalActions > 0 || s.students > 0);
     
     return `
       <div style="margin-bottom: 40px;">
-        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 900; color: ${pColor}; text-transform: uppercase; border-left: 5px solid ${pColor}; padding-left: 10px;">Unidade ${unit}</h4>
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 900; color: ${pColor}; text-transform: uppercase; border-left: 5px solid ${pColor}; padding-left: 10px;">Consolidado Hospital Adventista de Manaus - HAM</h4>
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed;">
           <thead>
             <tr style="background: ${pColor}; color: white; text-transform: uppercase;">
@@ -47,11 +48,11 @@ export const generateExecutiveHTML = (data: PDFTemplateData) => {
           </thead>
           <tbody>
             ${tableData.map(s => {
-              const u = unit === Unit.HAB ? s.hab : s.haba;
+              const u = s.stats; // Dados já processados para HAM no Reports.tsx
               return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                   <td style="padding: 10px; font-weight: 700; color: #1e293b;">${s.name}</td>
-                  <td style="padding: 10px; text-align: center; font-size: 14px; font-weight: 900; color: ${pColor}; background: #f8fafc;">${u.students}</td>
+                  <td style="padding: 10px; text-align: center; font-size: 14px; font-weight: 900; color: ${pColor}; background: #f8fafc;">${s.students}</td>
                   <td style="padding: 10px; text-align: center; font-weight: 600;">${u.studies}</td>
                   <td style="padding: 10px; text-align: center; font-weight: 600;">${u.classes}</td>
                   <td style="padding: 10px; text-align: center; font-weight: 600;">${u.groups}</td>
@@ -69,8 +70,7 @@ export const generateExecutiveHTML = (data: PDFTemplateData) => {
   let html = `
     <div class="pdf-page" style="width: 210mm; height: 297mm; padding: 15mm; background: white; box-sizing: border-box; font-family: sans-serif; position: relative;">
       ${renderHeader()}
-      ${renderTable(Unit.HAB)}
-      ${renderTable(Unit.HABA)}
+      ${renderTable(Unit.HAM)}
       
       <div style="margin-top: auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding-top: 20px; border-top: 2px solid #f1f5f9;">
         ${[
@@ -97,29 +97,27 @@ export const generateExecutiveHTML = (data: PDFTemplateData) => {
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
         ${chaplainStats.map(s => {
+          const u = s.stats;
           const metrics = [
-            { label: 'Alunos', hab: s.hab.students, haba: s.haba.students },
-            { label: 'Estudos', hab: s.hab.studies, haba: s.haba.studies },
-            { label: 'Classes', hab: s.hab.classes, haba: s.haba.classes },
-            { label: 'PGs', hab: s.hab.groups, haba: s.haba.groups },
-            { label: 'Visitas', hab: s.hab.visits, haba: s.haba.visits }
+            { label: 'Alunos', val: s.students },
+            { label: 'Estudos', val: u.studies },
+            { label: 'Classes', val: u.classes },
+            { label: 'PGs', val: u.groups },
+            { label: 'Visitas', val: u.visits }
           ];
-          const max = Math.max(...metrics.map(m => m.hab + m.haba), 1);
+          const max = Math.max(...metrics.map(m => m.val), 1);
 
           return `
             <div style="border: 1px solid #e2e8f0; border-radius: 15px; padding: 15px; background: #f8fafc;">
               <div style="font-size: 11px; font-weight: 900; color: #1e293b; text-transform: uppercase; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">${s.name}</div>
               <div style="display: flex; justify-content: space-around; align-items: flex-end; height: 120px; padding-top: 20px;">
                 ${metrics.map(m => {
-                  const hH = (m.hab / max) * 100;
-                  const hHa = (m.haba / max) * 100;
-                  const total = m.hab + m.haba;
+                  const h = (m.val / max) * 100;
                   return `
                     <div style="display: flex; flex-direction: column; align-items: center; width: 18%;">
-                      <div style="font-size: 11px; font-weight: 900; margin-bottom: 4px; color: ${pColor};">${total}</div>
-                      <div style="display: flex; align-items: flex-end; gap: 2px; height: 100px; width: 100%; background: #fff; border-radius: 4px; overflow: hidden; border: 1px solid #e2e8f0;">
-                         <div style="width: 50%; height: ${hH}%; background: ${pColor};"></div>
-                         <div style="width: 50%; height: ${hHa}%; background: #f97316;"></div>
+                      <div style="font-size: 11px; font-weight: 900; margin-bottom: 4px; color: ${pColor};">${m.val}</div>
+                      <div style="display: flex; align-items: flex-end; width: 100%; background: #fff; border-radius: 4px; overflow: hidden; border: 1px solid #e2e8f0; height: 100px;">
+                         <div style="width: 100%; height: ${h}%; background: ${pColor};"></div>
                       </div>
                       <div style="font-size: 7px; font-weight: 800; text-transform: uppercase; margin-top: 5px; color: #64748b;">${m.label}</div>
                     </div>
@@ -127,8 +125,7 @@ export const generateExecutiveHTML = (data: PDFTemplateData) => {
                 }).join('')}
               </div>
               <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
-                 <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 8px; height: 8px; background: ${pColor};"></div><span style="font-size: 7px; font-weight: bold;">HAB</span></div>
-                 <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 8px; height: 8px; background: #f97316;"></div><span style="font-size: 7px; font-weight: bold;">HABA</span></div>
+                 <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 8px; height: 8px; background: ${pColor};"></div><span style="font-size: 7px; font-weight: bold;">ATIVIDADES HAM</span></div>
               </div>
             </div>
           `;

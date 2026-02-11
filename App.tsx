@@ -19,7 +19,7 @@ const App: React.FC = () => {
 
   const {
     activeTab, isPending, setActiveTab,
-    currentUnit, setCurrentUnit,
+    currentUnit, 
     editingItem, setEditingItem,
     itemToDelete, setItemToDelete,
     handleSaveItem, confirmDeletion, getVisibleHistory
@@ -41,8 +41,8 @@ const App: React.FC = () => {
   }, [activeTab, setEditingItem]);
 
   const unitSectors = useMemo(() => 
-    proSectors.filter(s => s.unit === currentUnit).map(s => s.name).sort(), 
-  [proSectors, currentUnit]);
+    proSectors.map(s => s.name).sort(), 
+  [proSectors]);
 
   if (!isAuthenticated || !currentUser) {
     return <Login onLogin={login} isSyncing={isSyncing} errorMsg={loginError} isConnected={isConnected} config={config} />;
@@ -66,22 +66,6 @@ const App: React.FC = () => {
           onConfirm={confirmDeletion}
           onCancel={() => setItemToDelete(null)}
         />
-
-        {/* Seletor de Unidade (Fixo no Topo para Formulários) */}
-        {['bibleStudy', 'bibleClass', 'smallGroup', 'staffVisit'].includes(activeTab) && (
-          <div className="mb-8 flex bg-white p-1.5 rounded-full shadow-sm border border-slate-100 max-w-fit mx-auto md:mx-0 animate-in slide-in-from-left duration-300">
-            {[Unit.HAB, Unit.HABA].map(u => (
-              <button 
-                key={u} 
-                onClick={() => setCurrentUnit(u)} 
-                className={`px-8 py-2.5 rounded-full font-black text-[10px] uppercase transition-all ${currentUnit === u ? 'text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`} 
-                style={{ backgroundColor: currentUnit === u ? (config.primaryColor || '#005a9c') : undefined }}
-              >
-                Unidade {u}
-              </button>
-            ))}
-          </div>
-        )}
         
         {/* Conteúdo Principal Modularizado */}
         <MainContent 
@@ -99,7 +83,7 @@ const App: React.FC = () => {
           editingItem={editingItem}
           isLoading={isSyncing}
           setActiveTab={setActiveTab}
-          setCurrentUnit={setCurrentUnit}
+          setCurrentUnit={() => {}} // Desativado para HAM único
           setEditingItem={setEditingItem}
           setItemToDelete={setItemToDelete}
           saveToCloud={saveToCloud}

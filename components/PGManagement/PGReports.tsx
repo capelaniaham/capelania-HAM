@@ -121,8 +121,8 @@ const PGReports: React.FC<PGReportsProps> = ({ unit }) => {
               </div>
           </div>
           <div style="text-align: center; border-top: 2px solid #f1f5f9; padding-top: 25px; margin-top: auto;">
-              <div style="font-size: 14px; font-weight: 900; text-transform: uppercase; color: #334155; margin-bottom: 2px;">Pr. Carlos Escopel</div>
-              <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #94a3b8;">Diretor Espiritual - HAB/HABA</div>
+              <div style="font-size: 14px; font-weight: 900; text-transform: uppercase; color: #334155; margin-bottom: 2px;">Capelania Hospitalar</div>
+              <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #94a3b8;">Hospital Adventista de Manaus - HAM</div>
           </div>
       </div>
     `;

@@ -77,62 +77,46 @@ export const useAppData = () => {
     return success;
   };
 
-  /**
-   * ULTIMATE_ENTITY_SYNC_ENGINE (V4.1 - Enhanced Sector Healing)
-   * Motor de persistência centralizada para contatos e vínculos.
-   * Garante que o banco mestre RH reflita correções de telefone E SETOR feitas em formulários.
-   */
   const syncMasterContact = async (name: string, phone: string, unit: Unit, type: ParticipantType, extra?: string) => {
     const cleanPhone = String(phone || '').replace(/\D/g, '');
-    if (!name) return; // Nome é obrigatório para localizar
+    if (!name) return;
 
     const normName = normalizeString(name);
 
     if (type === ParticipantType.STAFF) {
-        // Localiza pelo nome normalizado e unidade
         const staff = proStaff.find(s => normalizeString(s.name) === normName && s.unit === unit);
         if (staff) {
             let updates: any = {};
             let hasUpdates = false;
-
-            // 1. Cura do Telefone
             if (cleanPhone && cleanPhone.length >= 8 && cleanPhone !== (staff.whatsapp || '')) {
                 updates.whatsapp = cleanPhone;
                 hasUpdates = true;
             }
-
-            // 2. Cura do Vínculo de Setor (O "Imã")
-            // Se um setor foi informado (extra) e é diferente do atual, move o colaborador.
             if (extra) {
                 const targetSector = proSectors.find(s => s.name === extra && s.unit === unit);
                 if (targetSector && staff.sectorId !== targetSector.id) {
                     updates.sectorId = targetSector.id;
                     updates.updatedAt = Date.now();
                     hasUpdates = true;
-                    console.log(`[DataHealing] Movendo ${staff.name} para o setor ${extra}`);
                 }
             }
-
             if (hasUpdates) {
-                // Atualização silenciosa do RH oficial
                 await saveRecord('proStaff', { ...staff, ...updates });
             }
         }
     } else if (type === ParticipantType.PATIENT) {
         const patient = proPatients.find(p => normalizeString(p.name) === normName && p.unit === unit);
-        if (!patient || (cleanPhone && cleanPhone !== (patient.whatsapp || ''))) {
-            const payload: ProPatient = patient 
-                ? { ...patient, whatsapp: cleanPhone || patient.whatsapp, updatedAt: Date.now() }
-                : { id: crypto.randomUUID(), name, unit, whatsapp: cleanPhone, updatedAt: Date.now() };
-            await saveRecord('proPatients', payload);
+        if (!patient) {
+            await saveRecord('proPatients', { id: crypto.randomUUID(), name, unit, whatsapp: cleanPhone, updatedAt: Date.now() });
+        } else if (cleanPhone && cleanPhone !== (patient.whatsapp || '')) {
+            await saveRecord('proPatients', { ...patient, whatsapp: cleanPhone, updatedAt: Date.now() });
         }
     } else if (type === ParticipantType.PROVIDER) {
         const provider = proProviders.find(p => normalizeString(p.name) === normName && p.unit === unit);
-        if (!provider || (cleanPhone && cleanPhone !== (provider.whatsapp || '')) || (extra && extra !== provider.sector)) {
-            const payload: ProProvider = provider
-                ? { ...provider, whatsapp: cleanPhone || provider.whatsapp, sector: extra || provider.sector, updatedAt: Date.now() }
-                : { id: crypto.randomUUID(), name, unit, whatsapp: cleanPhone, sector: extra, updatedAt: Date.now() };
-            await saveRecord('proProviders', payload);
+        if (!provider) {
+            await saveRecord('proProviders', { id: crypto.randomUUID(), name, unit, whatsapp: cleanPhone, sector: extra, updatedAt: Date.now() });
+        } else if ((cleanPhone && cleanPhone !== (provider.whatsapp || '')) || (extra && extra !== provider.sector)) {
+            await saveRecord('proProviders', { ...provider, whatsapp: cleanPhone || provider.whatsapp, sector: extra || provider.sector, updatedAt: Date.now() });
         }
     }
   };
